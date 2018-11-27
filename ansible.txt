@@ -1,0 +1,179 @@
+
+sudo vi /etc/hostname
+sudo vi ~/.bashrc
+source ~/.bashrc
+
+====================
+
+provide hostname:
+---------------
+sudo vi /etc/hostname
+
+ex: app01
+
+bashrc (sudo vi ~/.bashrc)
+==========
+alias lt='ls - ltra'
+alias bashrc='vim ~/bashrc'
+alias sbash='source ~/.bashrc'
+
+alias pb='cd ~/ansible/playbook'
+alias ans='cd ~/ansible'
+
+alias control='ssh 192.168.135.10'
+alias lb01='ssh 192.168.135.101' - load balancer
+alias app01='ssh 192.168.135.111'
+alias app02='ssh 192.168.135.112'
+alias db01='ssh 192.168.135.121'
+========================
+
+execution cmd:
+--------------
+
+source ~/.bashrc
+
+
+
+Ansible installation:
+======================
+sudo apt update
+sudo apt install software-properties-common
+sudo apt-add-repository ppa:ansible/ansible
+sudo apt update
+sudo apt install ansible
+
+
+
+
+Run playbook:  ansible-playbook lb.yml
+=============
+
+Create Playbook:(lb.yml) 
+=================
+
+# Loadbalancer
+---
+  - hosts: loadbalancer
+    become: true
+    tasks:
+      - name: installing nginx
+        apt: name=nginx state=present update_cache=yes
+
+---------------------
+run playbook:  ansible-playbook lb.yml
+---------------------
+
+
+playbook:
+==========
+
+# List the hostname
+---
+  - hosts: all
+    tasks:
+      - command: hostname
+      - command: echo Hi!
+
+DB Installation:
+================
+# DB server installation
+---
+  - hosts: database
+    become: true
+    tasks:
+      - name: install mysql-server
+        apt: name=mysql-server state=present update_cache=yes
+
+WS.yml:
+========
+# Webserver
+---
+  - hosts: webserver
+    become: true
+    tasks:
+      - name: install webserver components
+        apt: name={{ item }} state=present update_cache=yes
+        with_items:
+          - apache2
+          - libapache2-mod-wsgi
+          - python-pip
+          - python-virtualenv
+
+vagrant@control:~/ansible$ wget -qO- http://lb01
+
+vagrant@control:~/ansible$ wget -qO- http://app01| less
+
+vagrant@vagrant-ubuntu-trusty-64:/etc/apache2/sites-enabled/000-default.conf
+
+Control.yml:
+============
+
+# control                                                                 
+---                                                                       
+  - hosts: control                                                        
+    become: true                                                          
+    tasks:                                                                
+      - name: install tools                                               
+        apt: name={{ item }} state=present update_cache=yes               
+        with_items:                                                       
+          - curl                                                          
+
+verification:
+------------
+vagrant@control:~/ansible$ curl lb01
+
+vagrant@control:~/ansible$ ansible -m setup db01
+
+checking the port of DB from controller:
+----------------------------------------
+vagrant@control:~/ansible$ ansible -a "netstat -an" db01
+
+service-stopper:
+================
+
+# Stop all services
+---
+  - hosts: loadbalancer
+    become: true
+    tasks:
+      - name: ensure nginx stopped
+        service: name=nginx state=stopped
+  - hosts: webserver
+    become: true
+    tasks:
+      - name: ensure apache2 stopped
+        service: name=apache2 state=stopped
+  # Restart mysql
+  - hosts: database
+    become: true
+    tasks:
+      - name: ensure mysql restarted
+        service: name=mysql state=stopped
+
+Checking status of loadbalacer status:
+===============================
+ansible -a "service nginx status" lb01
+
+
+Creating roles:
+-===============
+
+ ansible-galaxy init control
+
+
+Tower:
+==========
+>vagrant init ansible/tower
+> vagrant up --provider virtualbox
+> vagrant ssh
+
+
+
+
+
+
+
+
+
+
+
