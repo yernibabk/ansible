@@ -161,11 +161,52 @@ Creating roles:
  ansible-galaxy init control
 
 
-Tower:
+Tower setup:
 ==========
 >vagrant init ansible/tower
 > vagrant up --provider virtualbox
 > vagrant ssh
+
+Performance:
+-----------
+
+time ansible-playbook sites.yml
+
+gather_facts: false
+
+tasks:
+ - name: update apt cache
+   apt: update_cache=yes cache_valid_time=86400
+
+time ansible-playbook playbooks/restart_stack.yml
+
+ansible-playbook sites.yml --list-tags
+
+packages installation:
+----------------------
+ansible-playbook sites.yml --tags "packages"
+
+Disable link:
+-------------
+
+name: get active sites
+shell: ls -l /etc/nginx/sites-enabled
+register: active
+
+-name: de-activate sites
+file: path=/etc/gnix/sites=enabled/{{ item}} state=absent
+with_items: active.stdout_lines
+when: item not in sites
+notify: restart nginx
+
+---
+hPKu75nYEdjR
+ps4X3y4fNqeN
+
+
+
+
+
 
 
 
